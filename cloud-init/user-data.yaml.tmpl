@@ -1,0 +1,60 @@
+#cloud-config
+# vim: syntax=yaml
+#
+# ***********************
+# 	---- for more examples look at: ------
+# ---> https://cloudinit.readthedocs.io/en/latest/topics/examples.html
+# ******************************
+#
+# This is the configuration syntax that the write_files module
+# will know how to understand. encoding can be given b64 or gzip or (gz+b64).
+# The content will be decoded accordingly and then written to the path that is
+# provided.
+#
+# Note: Content strings here are truncated for example purposes.
+
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+
+ssh_pwauth: True
+disable_root: False
+hostname: ${VM_NAME}
+chpasswd:
+    expire: False
+    list: |
+        root:${SSH_CA_PUBKEY}
+
+users:
+  - name: service-technician
+    lock_passwd: "true"
+    homedir: /home/service-technician
+    shell: /bin/bash
+
+runcmd:
+  - echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+  - systemctl restart ssh
+
+write_files:
+  - content: |
+      Port 22
+      
+      # SSH CA pub key https://manpages.debian.org/unstable/openssh-server/sshd_config.5.en.html#TrustedUserCAKeys
+      TrustedUserCAKeys /etc/ssh/user_ca.pub
+      
+      # HostCertificate /etc/ssh/ssh_host_rsa_key-cert.pub
+      # HostCertificate /etc/ssh/ssh_host_ecdsa_key-cert.pub
+      # HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub
+      AllowUsers *
+      PermitTTY yes
+      AllowTcpForwarding yes
+
+    path: /etc/ssh/sshd_config.d/90-trusted-ca.conf
+    permissions: '0644'
+  - content: |
+      ${SSH_CA_PUBKEY}
+    path: /etc/ssh/user_ca.pub
+    permissions: '0600'
+
+
+
