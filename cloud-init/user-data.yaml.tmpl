@@ -23,7 +23,7 @@ hostname: ${VM_NAME}
 chpasswd:
     expire: False
     list: |
-        root:${SSH_CA_PUBKEY}
+        root:${ROOT_PSW}
 
 users:
   - name: service-technician
